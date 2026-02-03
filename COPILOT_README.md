@@ -167,7 +167,7 @@ As of 2026-02-03, the original PHP-based documentation generator has been fixed 
 
 **Location:** `doc/docmaker.php` and `doc/document.php`
 
-**Issue Fixed:** Replaced deprecated `each()` function with `foreach()` in `doc/document.php` (lines 17 and 86)
+**Issue Fixed:** Replaced deprecated `each()` function with `foreach()` in `doc/document.php` (current lines 17 and 84; originally line 86 before refactoring)
 
 **Usage:**
 ```bash
