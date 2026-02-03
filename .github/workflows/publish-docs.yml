@@ -31,9 +31,9 @@ jobs:
       - name: Generate HTML documentation
         run: |
           echo "Generating documentation from progdesc.php..."
-          # Generate docs (warnings go to stderr, HTML goes to file)
+          # Generate docs (warnings go to separate log, HTML goes to file)
           php doc/docmaker.php animmerger.tar.bz2 progdesc.php \
-            > index.html
+            > index.html 2> doc_warnings.log
 
           # Verify the HTML file was created and has content
           if [ ! -f index.html ]; then
@@ -49,6 +49,12 @@ jobs:
             echo "Error: Generated HTML seems too small"
             echo "       (only $size lines)"
             exit 1
+          fi
+          
+          # Show warnings if any (for debugging)
+          if [ -s doc_warnings.log ]; then
+            echo "Documentation generated with warnings:"
+            cat doc_warnings.log
           fi
 
       - name: Create deployment directory
