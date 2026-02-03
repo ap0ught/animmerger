@@ -187,6 +187,31 @@ php doc/docmaker.php animmerger.tar.bz2 progdesc.php > animmerger.html
 
 For more details, see `GENERATING_DOCS.md`.
 
+### GitHub Pages Automation
+
+**Status:** Automated documentation publishing is configured as of 2026-02-03
+
+**Workflow:** `.github/workflows/publish-docs.yml`
+
+**Live Documentation:** [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)
+
+**How It Works:**
+1. Workflow triggers automatically when a new release is published
+2. Generates HTML documentation from `progdesc.php` using the fixed PHP generator
+3. Publishes to GitHub Pages automatically
+
+**Manual Trigger:** The workflow can also be manually triggered from the Actions tab
+
+**Benefits:**
+- Documentation is always synchronized with releases
+- No manual publishing steps required
+- Free hosting via GitHub Pages
+- Public access to always-current documentation
+
+**Configuration:**
+- GitHub Pages must be enabled in repository settings (Source: "GitHub Actions")
+- Workflow permissions: "Read and write permissions" in Actions settings
+
 ---
 
 *Last Updated: 2026-02-03*

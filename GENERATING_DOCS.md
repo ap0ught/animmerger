@@ -1,10 +1,14 @@
 # Documentation Generation Process
 
-**Update (2026-02-03):** The original PHP-based documentation generator has been fixed for PHP 8+ compatibility! The `each()` function has been replaced with `foreach()` in `doc/document.php`. See [Option 3](#option-3-fix-original-generator--completed) below for details.
+**Update (2026-02-03):** 
+- ✅ The original PHP-based documentation generator has been fixed for PHP 8+ compatibility! 
+- ✅ GitHub Pages automation is now set up to auto-publish documentation on each release!
+
+**View Live Documentation:** [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)
 
 ---
 
-This document explains how the documentation in this repository was created and how it can be updated in the future.
+This document explains how the documentation in this repository is created, published, and how it can be updated in the future.
 
 ## Source of Documentation
 
@@ -192,6 +196,59 @@ If progdesc.php is updated upstream:
 - These variables are only set by progdesc.php in specific cases for customization
 - The missing `/usr/local/bin/animmerger` and `/usr/local/bin/htmlrecode` are optional dependencies
   - They only affect help text inclusion and character encoding, not core documentation generation
+
+## GitHub Pages Automation 🚀
+
+**Status:** Automated documentation publishing is now configured!
+
+**Live Documentation:** [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)
+
+### How It Works
+
+The repository now includes a GitHub Actions workflow (`.github/workflows/publish-docs.yml`) that:
+
+1. **Triggers automatically** when a new release is published
+2. **Generates HTML documentation** using the fixed PHP generator:
+   ```bash
+   php doc/docmaker.php animmerger.tar.bz2 progdesc.php > index.html
+   ```
+3. **Publishes to GitHub Pages** automatically
+
+### Publishing Process
+
+When you create a new release on GitHub:
+
+1. Go to the GitHub repository → Releases → "Draft a new release"
+2. Create a tag (e.g., `v1.0.0`) and fill in release details
+3. Click "Publish release"
+4. The workflow automatically runs and publishes updated documentation to GitHub Pages
+5. Documentation is available at: `https://ap0ught.github.io/animmerger/`
+
+### Manual Trigger
+
+You can also manually trigger documentation publishing:
+
+1. Go to GitHub repository → Actions → "Publish Documentation to GitHub Pages"
+2. Click "Run workflow"
+3. Select the branch and click "Run workflow"
+
+### Configuration Requirements
+
+For the workflow to work properly, ensure:
+
+1. **GitHub Pages is enabled** in repository settings:
+   - Settings → Pages → Source: "GitHub Actions"
+
+2. **Workflow permissions** are set correctly:
+   - Settings → Actions → General → Workflow permissions: "Read and write permissions"
+
+### Advantages
+
+- ✅ **Always up-to-date:** Documentation automatically updates with each release
+- ✅ **No manual steps:** Just publish a release, documentation follows
+- ✅ **Version control:** Each release gets its documentation snapshot
+- ✅ **Public access:** Documentation is publicly accessible via GitHub Pages
+- ✅ **Free hosting:** No external hosting costs or dependencies
 
 ## Version Control
 

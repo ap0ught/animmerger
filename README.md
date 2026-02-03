@@ -2,6 +2,9 @@
 
 Animmerger stitches 2D images together, forming either a static image or an animation, while attempting to preserve a global frame of reference (static background).
 
+**📖 Full HTML Documentation:** [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)  
+**📚 Additional Docs:** [DOCUMENTATION.md](DOCUMENTATION.md) | [EXAMPLES.md](EXAMPLES.md)
+
 ## Features
 
 - **Advanced Image Stitching:** Combines multiple 2D images into panoramic stills or animations
