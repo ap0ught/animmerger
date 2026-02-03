@@ -148,7 +148,7 @@ gifsicle -O2 -o optimized.gif -l0 -d3 tile-*.gif
 Create a perfectly looping animation:
 
 ```bash
-animmerger --gif -pl frames/*.png
+animmerger --gif -po frames/*.png
 gifsicle -O2 -o loop.gif -l0 -d3 tile-*.gif
 ```
 
@@ -356,7 +356,7 @@ Use tinyaverage or solid methods:
 
 ```bash
 # Instead of -pa (average)
-animmerger -A frames/*.png -o output.png
+animmerger -pA frames/*.png -o output.png
 
 # Or use solid
 animmerger -pO frames/*.png -o output.png

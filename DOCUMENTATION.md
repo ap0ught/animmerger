@@ -56,7 +56,7 @@ The "average" method produces a "motion blur" effect of the entire input, reduci
 animmerger -pa input/*.png -m0,8,256,16,020202,A64010,D09030,006E84,511800,FFFFFF
 ```
 
-**Alternative:** `tinyaverage` (option `-A`) - Requires less memory but is less accurate.
+**Alternative:** `tinyaverage` (option `-pA`) - Requires less memory but is less accurate.
 
 **Note:** Add `--yuv` option to calculate color averages through YUV colorspace instead of RGB (not supported by tinyaverage).
 
@@ -220,7 +220,7 @@ gifsicle -O2 -o avg_loop.gif -l0 -d3 tile-*.gif
 | Method | Option | Type | Description |
 |--------|--------|------|-------------|
 | AVERAGE | `-pa` | Static | Motion blur of entire input |
-| TINYAVERAGE | `-A` | Static | Memory-efficient average |
+| TINYAVERAGE | `-pA` | Static | Memory-efficient average |
 | ACTIONAVG | `-pt` | Static | Average with separate background |
 | MOSTUSED | `-pm` | Static | Background extraction |
 | LAST | `-pl` | Static | Last pixel value |
