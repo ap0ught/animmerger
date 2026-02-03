@@ -1,6 +1,14 @@
 # Documentation Generation Process
 
-This document explains how the documentation in this repository was created and how it can be updated in the future.
+**Update (2026-02-03):** 
+- ✅ The original PHP-based documentation generator has been fixed for PHP 8+ compatibility! 
+- ✅ GitHub Pages automation is now set up to auto-publish documentation on each release!
+
+**View Live Documentation:** [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)
+
+---
+
+This document explains how the documentation in this repository is created, published, and how it can be updated in the future.
 
 ## Source of Documentation
 
@@ -26,17 +34,20 @@ The official Animmerger documentation at http://bisqwit.iki.fi/source/animmerger
 
 ## Original Documentation Generation
 
-The website HTML is normally generated using:
+The website HTML can now be generated using:
 
 ```bash
-php doc/docmaker.php animmerger.tar.bz2 progdesc.php
+php doc/docmaker.php animmerger.tar.bz2 progdesc.php > animmerger.html
 ```
 
-However, this process has some limitations:
-- Requires `/usr/local/bin/animmerger` to be installed (for help text)
-- Requires `/usr/local/bin/htmlrecode` for character encoding
-- Uses PHP's `each()` function (deprecated in PHP 7.2+)
-- Generates HTML output, not markdown
+**Note:** The PHP 8+ compatibility issues have been fixed (as of 2026-02-03). The script now works with modern PHP versions.
+
+**Optional Dependencies:**
+- `/usr/local/bin/animmerger` - Used to extract command-line help text (falls back gracefully if missing)
+- `/usr/local/bin/htmlrecode` - Used for character encoding conversion (falls back gracefully if missing)
+
+Previous limitations (now resolved):
+- ~~Uses PHP's `each()` function (deprecated in PHP 7.2+)~~ ✅ Fixed - now uses `foreach()`
 
 ## How Repository Documentation Was Created
 
@@ -153,32 +164,91 @@ If progdesc.php is updated upstream:
    # php extract_docs.php > new_DOCUMENTATION.md
    ```
 
-### Option 3: Fix Original Generator
+### Option 3: Fix Original Generator ✅ COMPLETED
 
-To restore the original HTML generation:
+**Status:** The original HTML generator has been fixed and is now fully functional with modern PHP.
 
-1. **Fix PHP compatibility issues:**
-   ```php
-   # In doc/document.php, replace each() with current()
-   # Change line 17 from:
-   while((list($title, $content) = each($text)))
-   # To:
-   foreach($text as $title => $content)
+**Changes Made:**
+1. **Fixed PHP 8+ compatibility issues in `doc/document.php`:**
+   - Replaced the first deprecated `each()` loop over `$text` with `foreach($text as $title => $content)`
+   - Replaced the second deprecated `each()` loop over `$text` with `foreach($text as $title => $content)`
+   - Removed unnecessary `reset($text)` calls that were only needed for `each()`
+
+**How to Use:**
+1. **Generate HTML documentation:**
+   ```bash
+   php doc/docmaker.php animmerger.tar.bz2 progdesc.php > animmerger.html
    ```
 
-2. **Handle missing dependencies:**
+2. **Optional - Handle external dependencies (for full functionality):**
    ```bash
-   # Ensure animmerger is built and available
+   # For help text generation: Build and install animmerger
    make
    sudo cp animmerger /usr/local/bin/
    
-   # Install or create htmlrecode wrapper
+   # For character encoding: Install htmlrecode (optional)
+   # The script will work without this, but won't perform character encoding conversion
    ```
 
-3. **Generate HTML:**
+**Notes:**
+- The generator now works with PHP 8.3+ without any fatal errors
+- Minor warnings about undefined optional variables (`$title_ext`, `$ozi_pre`, `$ozi_ext`) are expected and harmless
+- These variables are only set by progdesc.php in specific cases for customization
+- The missing `/usr/local/bin/animmerger` and `/usr/local/bin/htmlrecode` are optional dependencies
+  - They only affect help text inclusion and character encoding, not core documentation generation
+
+## GitHub Pages Automation 🚀
+
+**Status:** Automated documentation publishing is now configured!
+
+**Live Documentation:** [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)
+
+### How It Works
+
+The repository now includes a GitHub Actions workflow (`.github/workflows/publish-docs.yml`) that:
+
+1. **Triggers automatically** when a new release is published
+2. **Generates HTML documentation** using the fixed PHP generator:
    ```bash
-   php doc/docmaker.php animmerger.tar.bz2 progdesc.php > README.html
+   php doc/docmaker.php animmerger.tar.bz2 progdesc.php > index.html
    ```
+3. **Publishes to GitHub Pages** automatically
+
+### Publishing Process
+
+When you create a new release on GitHub:
+
+1. Go to the GitHub repository → Releases → "Draft a new release"
+2. Create a tag (e.g., `v1.0.0`) and fill in release details
+3. Click "Publish release"
+4. The workflow automatically runs and publishes updated documentation to GitHub Pages
+5. Documentation is available at: `https://ap0ught.github.io/animmerger/`
+
+### Manual Trigger
+
+You can also manually trigger documentation publishing:
+
+1. Go to GitHub repository → Actions → "Publish Documentation to GitHub Pages"
+2. Click "Run workflow"
+3. Select the branch and click "Run workflow"
+
+### Configuration Requirements
+
+For the workflow to work properly, ensure:
+
+1. **GitHub Pages is enabled** in repository settings:
+   - Settings → Pages → Source: "GitHub Actions"
+
+2. **Workflow permissions** are set correctly:
+   - Settings → Actions → General → Workflow permissions: "Read and write permissions"
+
+### Advantages
+
+- ✅ **Always up-to-date:** Documentation automatically updates with each release
+- ✅ **No manual steps:** Just publish a release, documentation follows
+- ✅ **Version control:** Each release gets its documentation snapshot
+- ✅ **Public access:** Documentation is publicly accessible via GitHub Pages
+- ✅ **Free hosting:** No external hosting costs or dependencies
 
 ## Version Control
 

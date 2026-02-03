@@ -13,8 +13,7 @@ $ndx = array();
 $k = 0;
 $lines = array();
 $titles = array();
-reset($text);
-while((list($title, $content) = each($text)))
+foreach($text as $title => $content)
 {
   $aname = preg_replace('@^([A-Za-z_0-9]+):.*@', '\1', $title);
   $class = preg_replace('@\. .*@', '', $title);
@@ -81,9 +80,8 @@ print '</tr></table></div>';
 unset($titles);
 
 $k = 0;
-reset($text);
 $lev = 0;
-while((list($title, $content) = each($text)))
+foreach($text as $title => $content)
 {
   $aname = preg_replace('@^([a-zA-Z_0-9]+):.*@', '\1', $title);
   $class = preg_replace('@\. .*@', '', $title);

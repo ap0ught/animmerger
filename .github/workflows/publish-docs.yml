@@ -1,0 +1,113 @@
+---
+name: Publish Documentation to GitHub Pages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:  # Allow manual trigger for testing
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+
+      - name: Generate HTML documentation
+        run: |
+          echo "Generating documentation from progdesc.php..."
+          # Generate docs (warnings go to separate log, HTML goes to file)
+          php doc/docmaker.php animmerger.tar.bz2 progdesc.php \
+            > index.html 2> doc_warnings.log
+
+          # Verify the HTML file was created and has content
+          if [ ! -f index.html ]; then
+            echo "Error: index.html was not created"
+            exit 1
+          fi
+
+          # Check file size (should be substantial)
+          size=$(wc -l < index.html)
+          echo "Generated HTML documentation with $size lines"
+
+          if [ "$size" -lt 100 ]; then
+            echo "Error: Generated HTML seems too small"
+            echo "       (only $size lines)"
+            exit 1
+          fi
+
+          # Show warnings if any (for debugging)
+          if [ -s doc_warnings.log ]; then
+            echo "Documentation generated with warnings:"
+            cat doc_warnings.log
+          fi
+
+      - name: Create deployment directory
+        run: |
+          mkdir -p _site
+          mv index.html _site/
+
+          # Create a simple README for the gh-pages branch
+          cat > _site/README.md << EOF
+          # Animmerger Documentation
+
+          This branch contains the auto-generated HTML documentation
+          for Animmerger.
+
+          **View the documentation:**
+          [https://ap0ught.github.io/animmerger/](https://ap0ught.github.io/animmerger/)
+
+          This documentation is automatically generated and published
+          when a new release is created.
+
+          ## Source
+
+          The documentation is generated from \`progdesc.php\` using
+          \`doc/docmaker.php\` and \`doc/document.php\`.
+
+          **Last updated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          EOF
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '_site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Summary
+        run: |
+          echo "## Documentation Published! 🎉" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The documentation has been successfully published" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "to GitHub Pages." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**View at:**" \
+            "https://ap0ught.github.io/animmerger/" \
+            >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment URL:**" \
+            "${{ steps.deployment.outputs.page_url }}" \
+            >> $GITHUB_STEP_SUMMARY
