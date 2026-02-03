@@ -33,7 +33,7 @@ jobs:
           echo "Generating documentation from progdesc.php..."
           # Generate docs (warnings go to stderr, HTML goes to file)
           php doc/docmaker.php animmerger.tar.bz2 progdesc.php \
-            > index.html 2>&1
+            > index.html
 
           # Verify the HTML file was created and has content
           if [ ! -f index.html ]; then
