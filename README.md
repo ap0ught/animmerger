@@ -86,8 +86,8 @@ gifsicle -O2 -o output.gif -l0 -d3 tile-*.gif
 ### Animated Methods (Animation Output)
 
 - **CHANGELOG** (`-pc`) - Full animation with fixed background
-- **LOOPINGLOG** - Optimized for looping animations
-- **LOOPINGAVG** (`-pv`) - Looping with motion blur
+- **LOOPINGLOG** (`-s` or `-po`) - Optimized for looping animations
+- **LOOPINGAVG** (`-pv`) - Looping with motion blur and averaging
 
 ## Documentation
 
@@ -133,7 +133,7 @@ gifsicle -O2 -o sprite_animation.gif -l0 -d5 tile-*.gif
 ## Advanced Options
 
 - `--yuv` - Calculate averages in YUV colorspace instead of RGB
-- `--blur N` - Add motion blur (N = 1-16)
+- `--motionblur N` (or `-B N`) - Add motion blur (N = 1-16)
 - `--gamma VALUE` - Apply gamma correction
 - `-f N` - Set first/last count for FIRSTNMOST/LASTNMOST methods
 - `-m x,y,w,h,colors...` - Mask region with specific parameters

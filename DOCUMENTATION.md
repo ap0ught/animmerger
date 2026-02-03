@@ -175,17 +175,45 @@ animmerger --gif -pc input/*.png -m0,8,256,16,020202,A64010,D09030,006E84,511800
 gifsicle -O2 -o output.gif -l0 -d3 tile-*.gif
 ```
 
-**Motion Blur Option:** Add `--blur N` (where N is 1-16) to create motion blur effect.
+**Motion Blur Option:** Add `--motionblur N` (or `-B N`) where N is 1-16 to create motion blur effect.
 
-#### LOOPINGLOG (option: `-pl`)
+#### LOOPINGLOG (option: `-s` or `-po`)
 
-Similar to CHANGELOG but optimized for looping animations.
+The "loopinglog" method records the entire animation but reuses existing frames. Use the `-l` option to set the loop length in frames. Also called "loopinglast" mode.
+
+**Features:**
+- Reuses existing frames for looping
+- Smaller value creates shorter animation with more "lemmings" effect
+- Supports motion blur with `--motionblur` (`-B`) option
+
+**Usage:**
+```bash
+# Create 10-frame loop
+animmerger --gif -l10 -po input/*.png
+gifsicle -O2 -o loop.gif -l0 -d3 tile-*.gif
+
+# With motion blur
+animmerger --gif -l10 -B4 -po input/*.png
+```
 
 #### LOOPINGAVG (option: `-pv`)
 
-Combines looping with averaging for motion blur effects in looping animations.
+The "loopingavg" method combines the "loopinglog" and "actionavg" methods. Use the `-l` option to set the loop length in frames.
 
-**Motion Blur:** Add `--blur N` for motion blur effect (N = 1-16).
+**Features:**
+- Overlapping action is averaged rather than choosing one pixel
+- Looks slightly better than loopinglog
+- May require GIF palette reduction
+- Only uses pixel colors present in original images
+
+**Usage:**
+```bash
+# Create 10-frame averaged loop
+animmerger --gif -l10 -pv input/*.png
+gifsicle -O2 -o avg_loop.gif -l0 -d3 tile-*.gif
+```
+
+**Motion Blur:** Add `--motionblur` (`-B`) option for motion blur effect.
 
 ### Method Summary
 
@@ -202,7 +230,7 @@ Combines looping with averaging for motion blur effects in looping animations.
 | LASTNMOST | `-pL` | Static | Most common of last N |
 | LEASTUSED | `-pe` | Static | Least used pixels |
 | CHANGELOG | `-pc` | Animated | Full animation with fixed background |
-| LOOPINGLOG | `-pl` | Animated | Looping optimized changelog |
+| LOOPINGLOG | `-s` or `-po` | Animated | Looping optimized changelog |
 | LOOPINGAVG | `-pv` | Animated | Looping with averaging |
 
 ---
@@ -406,7 +434,7 @@ animmerger [options] input_files...
 - `-m x,y,w,h,colors...` - Mask region
 - `--gif` - Output as GIF
 - `--yuv` - Use YUV colorspace
-- `--blur N` - Apply motion blur (1-16)
+- `--motionblur N` (or `-B N`) - Apply motion blur (1-16)
 - `-f N` - Set first/last count for FIRSTNMOST/LASTNMOST
 - `--gamma VALUE` - Set gamma correction
 

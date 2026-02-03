@@ -158,14 +158,14 @@ Add motion blur to the animation:
 
 ```bash
 # Blur level 4 (1-16 scale)
-animmerger --gif -pc --blur 4 frames/*.png
+animmerger --gif -pc --motionblur 4 frames/*.png
 gifsicle -O2 -o blur_animation.gif -l0 -d3 tile-*.gif
 ```
 
 ### Looping Animation with Motion Blur
 
 ```bash
-animmerger --gif -pv --blur 8 frames/*.png
+animmerger --gif -pv --motionblur 8 frames/*.png
 gifsicle -O2 -o blur_loop.gif -l0 -d3 tile-*.gif
 ```
 
