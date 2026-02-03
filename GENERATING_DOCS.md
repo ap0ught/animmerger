@@ -170,8 +170,8 @@ If progdesc.php is updated upstream:
 
 **Changes Made:**
 1. **Fixed PHP 8+ compatibility issues in `doc/document.php`:**
-   - Replaced deprecated `each()` function on line 17 with `foreach($text as $title => $content)`
-   - Replaced deprecated `each()` function on line 86 with `foreach($text as $title => $content)`
+   - Replaced the first deprecated `each()` loop over `$text` with `foreach($text as $title => $content)`
+   - Replaced the second deprecated `each()` loop over `$text` with `foreach($text as $title => $content)`
    - Removed unnecessary `reset($text)` calls that were only needed for `each()`
 
 **How to Use:**
