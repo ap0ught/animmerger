@@ -1,0 +1,44 @@
+align.o: align.cc align.hh types.hh alloc/FSBAllocator.hh settype.hh \
+ binaryheap.hh vectype.hh pixel.hh openmp.hh
+canvas.o: canvas.cc canvas.hh pixel.hh types.hh vectype.hh \
+ alloc/FSBAllocator.hh palette.hh kdtree.hh openmp.hh align.hh dither.hh \
+ quantize.hh fparser/fparser.hh
+dither.o: dither.cc dither.hh palette.hh types.hh kdtree.hh \
+ alloc/FSBAllocator.hh pixel.hh maptype.hh binaryheap.hh vectype.hh
+main.o: main.cc canvas.hh pixel.hh types.hh vectype.hh \
+ alloc/FSBAllocator.hh palette.hh kdtree.hh settype.hh binaryheap.hh \
+ align.hh dither.hh presets.hh mask.hh rangemap.hh range.hh range.tcc \
+ rangemap.tcc
+mask.o: mask.cc mask.hh settype.hh binaryheap.hh vectype.hh types.hh \
+ pixel.hh pixels/averagepixel.hh openmp.hh
+palette.o: palette.cc palette.hh types.hh kdtree.hh alloc/FSBAllocator.hh \
+ fparser/fparser.hh
+pixel.o: pixel.cc types.hh pixel.hh pixels/lastpixel.hh \
+ pixels/firstpixel.hh pixels/solidpixel.hh pixels/averagepixel.hh \
+ pixels/tinyaveragepixel.hh pixels/mostusedpixel.hh maptype.hh \
+ binaryheap.hh vectype.hh pixels/changelogpixel.hh
+presets.o: presets.cc presets.hh
+quantize.o: quantize.cc quantize.hh alloc/FSBAllocator.hh types.hh \
+ palette.hh kdtree.hh pixel.hh pixels/averagepixel.hh
+align.lo: align.cc align.hh types.hh alloc/FSBAllocator.hh settype.hh \
+ binaryheap.hh vectype.hh pixel.hh openmp.hh
+canvas.lo: canvas.cc canvas.hh pixel.hh types.hh vectype.hh \
+ alloc/FSBAllocator.hh palette.hh kdtree.hh openmp.hh align.hh dither.hh \
+ quantize.hh fparser/fparser.hh
+dither.lo: dither.cc dither.hh palette.hh types.hh kdtree.hh \
+ alloc/FSBAllocator.hh pixel.hh maptype.hh binaryheap.hh vectype.hh
+main.lo: main.cc canvas.hh pixel.hh types.hh vectype.hh \
+ alloc/FSBAllocator.hh palette.hh kdtree.hh settype.hh binaryheap.hh \
+ align.hh dither.hh presets.hh mask.hh rangemap.hh range.hh range.tcc \
+ rangemap.tcc
+mask.lo: mask.cc mask.hh settype.hh binaryheap.hh vectype.hh types.hh \
+ pixel.hh pixels/averagepixel.hh openmp.hh
+palette.lo: palette.cc palette.hh types.hh kdtree.hh alloc/FSBAllocator.hh \
+ fparser/fparser.hh
+pixel.lo: pixel.cc types.hh pixel.hh pixels/lastpixel.hh \
+ pixels/firstpixel.hh pixels/solidpixel.hh pixels/averagepixel.hh \
+ pixels/tinyaveragepixel.hh pixels/mostusedpixel.hh maptype.hh \
+ binaryheap.hh vectype.hh pixels/changelogpixel.hh
+presets.lo: presets.cc presets.hh
+quantize.lo: quantize.cc quantize.hh alloc/FSBAllocator.hh types.hh \
+ palette.hh kdtree.hh pixel.hh pixels/averagepixel.hh
