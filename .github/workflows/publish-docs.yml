@@ -31,8 +31,9 @@ jobs:
       - name: Generate HTML documentation
         run: |
           echo "Generating documentation from progdesc.php..."
+          # Generate docs (warnings go to stderr, HTML goes to file)
           php doc/docmaker.php animmerger.tar.bz2 progdesc.php \
-            > index.html 2>&1 | grep -v "^PHP Warning:" || true
+            > index.html 2>&1
 
           # Verify the HTML file was created and has content
           if [ ! -f index.html ]; then
@@ -56,7 +57,7 @@ jobs:
           mv index.html _site/
 
           # Create a simple README for the gh-pages branch
-          cat > _site/README.md << 'EOF'
+          cat > _site/README.md << EOF
           # Animmerger Documentation
 
           This branch contains the auto-generated HTML documentation
@@ -70,8 +71,8 @@ jobs:
 
           ## Source
 
-          The documentation is generated from `progdesc.php` using
-          `doc/docmaker.php` and `doc/document.php`.
+          The documentation is generated from \`progdesc.php\` using
+          \`doc/docmaker.php\` and \`doc/document.php\`.
 
           **Last updated:** $(date -u +"%Y-%m-%d %H:%M:%S UTC")
           EOF
