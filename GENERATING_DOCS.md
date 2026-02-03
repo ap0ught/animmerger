@@ -1,5 +1,9 @@
 # Documentation Generation Process
 
+**Update (2026-02-03):** The original PHP-based documentation generator has been fixed for PHP 8+ compatibility! The `each()` function has been replaced with `foreach()` in `doc/document.php`. See [Option 3](#option-3-fix-original-generator--completed) below for details.
+
+---
+
 This document explains how the documentation in this repository was created and how it can be updated in the future.
 
 ## Source of Documentation
@@ -26,17 +30,20 @@ The official Animmerger documentation at http://bisqwit.iki.fi/source/animmerger
 
 ## Original Documentation Generation
 
-The website HTML is normally generated using:
+The website HTML can now be generated using:
 
 ```bash
-php doc/docmaker.php animmerger.tar.bz2 progdesc.php
+php doc/docmaker.php animmerger.tar.bz2 progdesc.php > animmerger.html
 ```
 
-However, this process has some limitations:
-- Requires `/usr/local/bin/animmerger` to be installed (for help text)
-- Requires `/usr/local/bin/htmlrecode` for character encoding
-- Uses PHP's `each()` function (deprecated in PHP 7.2+)
-- Generates HTML output, not markdown
+**Note:** The PHP 8+ compatibility issues have been fixed (as of 2026-02-03). The script now works with modern PHP versions.
+
+**Optional Dependencies:**
+- `/usr/local/bin/animmerger` - Used to extract command-line help text (falls back gracefully if missing)
+- `/usr/local/bin/htmlrecode` - Used for character encoding conversion (falls back gracefully if missing)
+
+Previous limitations (now resolved):
+- ~~Uses PHP's `each()` function (deprecated in PHP 7.2+)~~ ✅ Fixed - now uses `foreach()`
 
 ## How Repository Documentation Was Created
 
@@ -153,32 +160,38 @@ If progdesc.php is updated upstream:
    # php extract_docs.php > new_DOCUMENTATION.md
    ```
 
-### Option 3: Fix Original Generator
+### Option 3: Fix Original Generator ✅ COMPLETED
 
-To restore the original HTML generation:
+**Status:** The original HTML generator has been fixed and is now fully functional with modern PHP.
 
-1. **Fix PHP compatibility issues:**
-   ```php
-   # In doc/document.php, replace each() with current()
-   # Change line 17 from:
-   while((list($title, $content) = each($text)))
-   # To:
-   foreach($text as $title => $content)
+**Changes Made:**
+1. **Fixed PHP 8+ compatibility issues in `doc/document.php`:**
+   - Replaced deprecated `each()` function on line 17 with `foreach($text as $title => $content)`
+   - Replaced deprecated `each()` function on line 86 with `foreach($text as $title => $content)`
+   - Removed unnecessary `reset($text)` calls that were only needed for `each()`
+
+**How to Use:**
+1. **Generate HTML documentation:**
+   ```bash
+   php doc/docmaker.php animmerger.tar.bz2 progdesc.php > animmerger.html
    ```
 
-2. **Handle missing dependencies:**
+2. **Optional - Handle external dependencies (for full functionality):**
    ```bash
-   # Ensure animmerger is built and available
+   # For help text generation: Build and install animmerger
    make
    sudo cp animmerger /usr/local/bin/
    
-   # Install or create htmlrecode wrapper
+   # For character encoding: Install htmlrecode (optional)
+   # The script will work without this, but won't perform character encoding conversion
    ```
 
-3. **Generate HTML:**
-   ```bash
-   php doc/docmaker.php animmerger.tar.bz2 progdesc.php > README.html
-   ```
+**Notes:**
+- The generator now works with PHP 8.3+ without any fatal errors
+- Minor warnings about undefined optional variables (`$title_ext`, `$ozi_pre`, `$ozi_ext`) are expected and harmless
+- These variables are only set by progdesc.php in specific cases for customization
+- The missing `/usr/local/bin/animmerger` and `/usr/local/bin/htmlrecode` are optional dependencies
+  - They only affect help text inclusion and character encoding, not core documentation generation
 
 ## Version Control
 

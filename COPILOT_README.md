@@ -159,6 +159,34 @@ make
 - More quantization methods possible
 - Documentation could be expanded
 
+## Documentation Generation
+
+### PHP-Based HTML Generator (Fixed for PHP 8+)
+
+As of 2026-02-03, the original PHP-based documentation generator has been fixed for PHP 8+ compatibility:
+
+**Location:** `doc/docmaker.php` and `doc/document.php`
+
+**Issue Fixed:** Replaced deprecated `each()` function with `foreach()` in `doc/document.php` (lines 17 and 86)
+
+**Usage:**
+```bash
+php doc/docmaker.php animmerger.tar.bz2 progdesc.php > animmerger.html
+```
+
+**Source Files:**
+- `progdesc.php` - Main documentation source (1,382 lines) containing all text content as PHP array
+- `doc/docmaker.php` - Generic documentation generator script (version 1.2.1)
+- `doc/document.php` - Document formatting module (version 2.0.7, now PHP 8+ compatible)
+
+**Generated Output:** HTML documentation matching the official website at http://bisqwit.iki.fi/source/animmerger.html
+
+**Optional Dependencies:**
+- `/usr/local/bin/animmerger` - For help text inclusion (gracefully degrades if missing)
+- `/usr/local/bin/htmlrecode` - For character encoding (gracefully degrades if missing)
+
+For more details, see `GENERATING_DOCS.md`.
+
 ---
 
 *Last Updated: 2026-02-03*
