@@ -50,7 +50,7 @@ jobs:
             echo "       (only $size lines)"
             exit 1
           fi
-          
+
           # Show warnings if any (for debugging)
           if [ -s doc_warnings.log ]; then
             echo "Documentation generated with warnings:"
