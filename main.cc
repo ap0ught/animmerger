@@ -396,7 +396,10 @@ Output options:\n\
                 if(v>=1)O << "\
  --dithmatrix, --dm <x>,<y>[<,time>]\n\
      Set the Bayer matrix size to be used in dithering.\n\
-     Common values include 2x2, 4x4 and 8x8. Default: 8x8x1.\n";
+     Common values include 2x2, 4x4 and 8x8. Default: 8x8x1.\n\
+ --dithmatrix, --dm <file>\n\
+     Load custom dithering matrix from the given file (PNG, GIF or BMP).\n\
+     The image file should ideally be grayscale. Paletted images are acceptable.\n";
                 if(v>=2)O << "\
  --dithcount, --dc <int>\n\
      Set maximum number of palette colors to use in dithering\n\
@@ -1265,6 +1268,44 @@ rate.\n\
                 case 5002: // dithmatrix, dm
                 {
                     char* arg = optarg;
+                    // Try to open as a file first (without TOCTOU race condition)
+                    FILE* fp = fopen(arg, "rb");
+                    if(fp)
+                    {
+                        gdImagePtr im = gdImageCreateFromPng(fp);
+                        if(!im) { std::rewind(fp); im = gdImageCreateFromGif(fp); }
+                        if(!im) { std::rewind(fp); im = gdImageCreateFromBmp(fp); }
+                        if(!im)
+                        {
+                            std::fprintf(stderr,
+                                "%s: Not a PNG, GIF or BMP file! Cannot read dithering matrix image.\n",
+                                    arg);
+                            std::fclose(fp);
+                            opt_exit = true; exit_code = 1;
+                            break;
+                        }
+                        std::fclose(fp);
+                        DitherMatrixWidth = gdImageSX(im);
+                        DitherMatrixHeight = gdImageSY(im);
+                        std::vector<unsigned> elements;
+                        // Cast to size_t to prevent overflow
+                        elements.reserve(static_cast<std::size_t>(DitherMatrixWidth) * DitherMatrixHeight);
+                        if(!gdImageTrueColor(im))
+                        {
+                            gdImagePaletteToTrueColor(im);
+                        }
+                        gdImageGrayScale(im);
+                        for(unsigned y = 0; y < DitherMatrixHeight; y++)
+                        {
+                            for(unsigned x = 0; x < DitherMatrixWidth; x++)
+                            {
+                                elements.push_back( gdTrueColorGetBlue( gdImageGetTrueColorPixel(im, x,y) ) );
+                            }
+                        }
+                        gdImageDestroy(im);
+                        CustomDitheringMatrix = ProcessDitheringMatrixFromImage(elements);
+                        break;
+                    }
                     for(char*s = arg; *s; ++s) if(*s == 'x') *s = ',';
                     int dx,dy,dt;
                     int result = sscanf(arg, "%d,%d,%d", &dx,&dy,&dt);
@@ -1534,8 +1575,9 @@ int main(int argc, char** argv)
             "animmerger: Warning: Dithering will not be done when the palette is not reduced by animmerger. Even if you specify GIF output format but no quantization methods (--quantize), dithering will not be used.\n");
     }
 
-    if((DitherMatrixWidth & (DitherMatrixWidth-1))
-    || (DitherMatrixHeight & (DitherMatrixHeight-1)))
+    if(CustomDitheringMatrix.empty() &&
+      ((DitherMatrixWidth & (DitherMatrixWidth-1))
+    || (DitherMatrixHeight & (DitherMatrixHeight-1))))
     {
         std::fprintf(stderr, "animmerger: Warning: Dither matrix dimensions should be given as powers of two. %dx%d will work, but it might not look pretty, because animmerger generates the matrix with an algorithm designed for power-of-two dimensions.\n",
             DitherMatrixWidth,DitherMatrixHeight);

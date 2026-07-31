@@ -90,6 +90,24 @@ std::vector<unsigned> CreatePowerofTwoDitheringMatrix(unsigned Width, unsigned H
     return result;
 }
 
+std::vector<unsigned> ProcessDitheringMatrixFromImage(std::vector<unsigned> elements)
+{
+    unsigned matrix_size = DitherMatrixWidth * DitherMatrixHeight;
+    std::vector<unsigned> result(matrix_size);
+    unsigned next_output_value = 0;
+    for (unsigned v = 256; v > 0; v--)
+    {
+        for (unsigned i = 0; i < matrix_size; i++)
+        {
+            if (elements[i]+1 == v)
+            {
+                result[i] = next_output_value++;
+            }
+        }
+    }
+    return result;
+}
+
 std::vector<unsigned> CreateDispersedDitheringMatrix()
 {
     return CreatePowerofTwoDitheringMatrix(DitherMatrixWidth, DitherMatrixHeight);

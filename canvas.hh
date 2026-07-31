@@ -20,6 +20,7 @@ typedef struct gdImageStruct* gdImagePtr;
 extern int SaveGif;
 extern bool UseDitherCache;
 extern std::string OutputNameTemplate;
+extern std::vector<unsigned> CustomDitheringMatrix;
 
 struct AlignResult;
 
