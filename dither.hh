@@ -38,5 +38,6 @@ extern enum DiffusionMethod
 
 std::vector<unsigned> CreateDispersedDitheringMatrix();
 std::vector<unsigned> CreateTemporalDitheringMatrix();
+std::vector<unsigned> ProcessDitheringMatrixFromImage(std::vector<unsigned> elements);
 
 #endif

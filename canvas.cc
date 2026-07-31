@@ -25,6 +25,7 @@ int pad_top=0, pad_bottom=0, pad_left=0, pad_right=0;
 int SaveGif = -1;
 bool UseDitherCache = true;
 std::string OutputNameTemplate = "%2$s-%1$04u.%3$s";
+std::vector<unsigned> CustomDitheringMatrix;
 
 #ifdef __MINGW32__
 /* A version of snprintf() that adds support for positional parameters */
@@ -648,7 +649,14 @@ void TILE_Tracker::Save(unsigned method)
 
     if(!PaletteReductionMethod.empty())
     {
-        DitheringMatrix = CreateDispersedDitheringMatrix();
+        if (!CustomDitheringMatrix.empty())
+        {
+            DitheringMatrix = CustomDitheringMatrix;
+        }
+        else
+        {
+            DitheringMatrix = CreateDispersedDitheringMatrix();
+        }
         TemporalMatrix = CreateTemporalDitheringMatrix();
     }
 
