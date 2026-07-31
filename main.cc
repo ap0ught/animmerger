@@ -1268,15 +1268,10 @@ rate.\n\
                 case 5002: // dithmatrix, dm
                 {
                     char* arg = optarg;
-                    if(access(arg, R_OK) == 0)
+                    // Try to open as a file first (without TOCTOU race condition)
+                    FILE* fp = fopen(arg, "rb");
+                    if(fp)
                     {
-                        FILE* fp = fopen(arg, "rb");
-                        if(!fp)
-                        {
-                            std::perror(arg);
-                            opt_exit = true; exit_code = errno;
-                            break;
-                        }
                         gdImagePtr im = gdImageCreateFromPng(fp);
                         if(!im) { std::rewind(fp); im = gdImageCreateFromGif(fp); }
                         if(!im) { std::rewind(fp); im = gdImageCreateFromBmp(fp); }
@@ -1285,13 +1280,16 @@ rate.\n\
                             std::fprintf(stderr,
                                 "%s: Not a PNG, GIF or BMP file! Cannot read dithering matrix image.\n",
                                     arg);
+                            std::fclose(fp);
                             opt_exit = true; exit_code = 1;
                             break;
                         }
+                        std::fclose(fp);
                         DitherMatrixWidth = gdImageSX(im);
                         DitherMatrixHeight = gdImageSY(im);
                         std::vector<unsigned> elements;
-                        elements.reserve(DitherMatrixWidth * DitherMatrixHeight);
+                        // Cast to size_t to prevent overflow
+                        elements.reserve(static_cast<std::size_t>(DitherMatrixWidth) * DitherMatrixHeight);
                         if(!gdImageTrueColor(im))
                         {
                             gdImagePaletteToTrueColor(im);
