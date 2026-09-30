@@ -143,7 +143,7 @@ namespace
 
     #define MakeMethodCaller(n,f,name) \
     template<typename T, \
-             bool HasMethod = PixelMetaInfo<T>::Traits & (1u << pm_##name##Pixel)> \
+             bool HasMethod = (PixelMetaInfo<T>::Traits & (1u << pm_##name##Pixel)) != 0> \
     struct CallGet##name##Helper \
     { \
         static uint32 call(const T& obj, unsigned timer=0) FasterPixelMethod \
