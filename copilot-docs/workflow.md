@@ -19,8 +19,8 @@ make
 ### Development Environment
 
 **Recommended:**
-- C++ compiler with C++11 support (GCC 4.8+, Clang 3.4+)
-- OpenMP support for parallelization
+- C++ compiler with C++17 support (the Makefile passes `-std=gnu++1z`)
+- OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
 - Text editor with C++ syntax support
 - Git for version control
 

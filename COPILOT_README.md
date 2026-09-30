@@ -93,8 +93,8 @@ make
 
 ### Dependencies
 
-- C++ compiler with C++11 support
-- OpenMP for parallel processing
+- C++ compiler with C++17 support
+- OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
 
 ## Common Tasks
 

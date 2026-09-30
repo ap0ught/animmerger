@@ -100,11 +100,21 @@ gifsicle -O2 -o output.gif -l0 -d3 tile-*.gif
 
 ## Requirements
 
-- C++ compiler with C++11 support (GCC 4.8+, Clang 3.4+)
+- C++ compiler with C++17 support (the Makefile passes `-std=gnu++1z`)
 - Make
-- PNG library (libpng)
-- OpenMP (optional, for parallel processing)
+- **libgd** (`-lgd`) — animmerger reads and writes images through libgd, not libpng
+- **OpenMP** (required, not optional — the Makefile passes `-fopenmp` unconditionally and defines the thread-safe OpenMP paths in `alloc/FSBAllocator.hh`)
 - gifsicle (optional, for GIF optimization)
+- php (optional, only to regenerate `doc/README.html` via `doc/docmaker.php`)
+
+On Arch/CachyOS: `pacman -S gd`. On Debian/Ubuntu: `apt-get install libgd-dev`.
+
+## Building
+
+```bash
+make            # produces ./animmerger
+make check      # builds and runs the test suite (see tests/)
+```
 
 ## Examples
 

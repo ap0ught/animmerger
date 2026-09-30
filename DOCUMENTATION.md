@@ -471,13 +471,13 @@ animmerger -pm frames/*.png -m0,8,256,16,FFFFFF,000000,FF0000 -o clean_backgroun
 
 ### Build Requirements
 
-- C++ compiler with C++11 support (GCC 4.8+, Clang 3.4+)
+- C++ compiler with C++17 support (the Makefile passes `-std=gnu++1z`)
 - Make
-- OpenMP (optional, for parallel processing)
+- OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
 
 ### Runtime Requirements
 
-- PNG library (libpng)
+- libgd (`-lgd`) — animmerger reads and writes images through libgd, not libpng
 - For GIF output: GIF library or external tools like gifsicle
 
 ### Optional Tools
