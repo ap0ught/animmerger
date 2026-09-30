@@ -49,14 +49,22 @@ jobs:
       # naming neither the line nor the cause. That is exactly how the first
       # version of this file failed.
       #
-      # Files are named explicitly rather than globbed: 'args' is handed to the
-      # container entrypoint, not a shell, so '.github/workflows/*.yml' would
-      # not expand. actionlint exits 1 on the object-in-template class of error.
+      # Scoped to structural validation on purpose:
+      # -shellcheck= disables the shellcheck integration. actionlint's bundled
+      # container has shellcheck, a bare binary on a dev machine usually does
+      # not, and that difference turns this step red on pre-existing style
+      # findings in publish-docs.yml (SC2086, SC2129) while passing locally --
+      # the worst possible failure mode for a lint gate. A style finding in a
+      # run: block is real but it is not what this step is for; `run:` blocks
+      # are still executed for real by the Build and Check steps below.
+      # Files are named explicitly because 'args' goes to the container
+      # entrypoint rather than a shell, so a glob would not expand.
       - name: Lint the workflows
         uses: docker://rhysd/actionlint:1.7.7
         with:
           args: >-
             -color
+            -shellcheck=
             .github/workflows/build.yml
             .github/workflows/publish-docs.yml
 
