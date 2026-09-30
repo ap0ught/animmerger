@@ -3,6 +3,7 @@
 animmerger
 animmerger_cga16
 animmerger_nes
+tests/test_animmerger
 
 # Generated dependency files from depfun.mak
 .depend

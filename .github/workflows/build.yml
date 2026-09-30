@@ -1,0 +1,78 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  # Lets a maintainer re-run a build against an old commit from the UI.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.compiler }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Report every result rather than stopping at the first failure: a
+      # GCC-only break and a Clang-only break are different bugs.
+      fail-fast: false
+      matrix:
+        compiler:
+          - { name: gcc,   cc: g++ }
+          - { name: clang, cc: clang++ }
+
+    env:
+      CC: ${{ matrix.compiler.cc }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make libgd-dev
+          pkg-config --exists gdlib && echo "gdlib found: $(pkg-config --modversion gdlib)"
+
+      - name: Report toolchain versions
+        run: |
+          $CC --version | head -1
+          echo "libgd headers: $(dpkg -s libgd-dev | grep ^Version)"
+
+      # No warnings-as-errors gate: on a current GCC this tree emits ~2,000
+      # warnings, 1,670 of them 'regparm attribute ignored' from the
+      # FasterPixelMethod typedefs (a 32-bit x86 attribute that x86-64 drops).
+      # 'make' already exits non-zero on a hard error, which is the signal that
+      # matters -- PR #5's build break was 98 such errors.
+      - name: Build
+        run: make -j"$(nproc)" 2>&1 | tee build.log
+
+      - name: Check
+        run: make check 2>&1 | tee check.log
+
+      - name: Verify the binary actually runs
+        run: |
+          ./animmerger --version
+          ./animmerger --longhelp > /dev/null
+          ./animmerger 2>&1 | head -5
+
+      - name: Upload the binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: animmerger-${{ matrix.compiler.name }}
+          path: animmerger
+          if-no-files-found: error
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.compiler.name }}
+          path: |
+            build.log
+            check.log
+          if-no-files-found: ignore

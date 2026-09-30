@@ -104,6 +104,17 @@ gdImagePtr LoadPng(const std::string& name)
     return im;
 }
 
+// Loads an image from an explicit path rather than from the scratch dir, for
+// the one test that asserts where the default output name lands.
+gdImagePtr LoadPngAt(const std::string& fullpath)
+{
+    FILE* fp = std::fopen(fullpath.c_str(), "rb");
+    if(!fp) return nullptr;
+    gdImagePtr im = gdImageCreateFromPng(fp);
+    std::fclose(fp);
+    return im;
+}
+
 // gdImageDestroy dereferences its argument without a null check, and LoadPng
 // returns null on a missing or unreadable file, which several tests assert.
 void Destroy(gdImagePtr im)
@@ -234,6 +245,23 @@ void TestMostUsedDiscardsMovingActor()
 
     gdImagePtr out = LoadPng("out-nomostused.png");
     CHECK(out, "could not load output png");
+    // Assert both directions. Checking only that the actor is absent is not
+    // enough: a background extractor that collapses to a single flat colour
+    // also has no actor in it, and that is just as broken.
+    const int BACKGROUND = gdTrueColor(20, 40, 60);
+    int wrongPixel = 0, firstX = -1, firstY = -1;
+    for(int y = 0; y < gdImageSY(out); ++y)
+        for(int x = 0; x < gdImageSX(out); ++x)
+        {
+            int px = gdImageGetTrueColorPixel(out, x, y);
+            if(px != BACKGROUND && px != gdTrueColor(240, 240, 240))
+            {
+                if(firstX < 0) { firstX = x; firstY = y; }
+                ++wrongPixel;
+            }
+        }
+    CHECK_MSG(wrongPixel == 0,
+              "mostused invented a colour that was in no input frame");
     // Every one of the 16 possible block positions was occupied for exactly
     // one frame, so the white block can never win a most-used vote.
     for(int cy = 0; cy < 32; cy += 8)
@@ -245,6 +273,14 @@ void TestMostUsedDiscardsMovingActor()
                           cx, cy, gdTrueColorGetRed(px), gdTrueColorGetGreen(px), gdTrueColorGetBlue(px));
             CHECK_MSG(px != gdTrueColor(240, 240, 240), msg);
         }
+    // And the background itself must have survived everywhere.
+    int survivors = 0;
+    for(int y = 0; y < gdImageSY(out); ++y)
+        for(int x = 0; x < gdImageSX(out); ++x)
+            if(gdImageGetTrueColorPixel(out, x, y) == BACKGROUND) ++survivors;
+    CHECK_MSG(survivors == gdImageSX(out) * gdImageSY(out),
+              "mostused did not return the background everywhere: only "
+              "the actor colour survived, so the extraction collapsed");
     Destroy(out);
     Pass();
 }
@@ -624,6 +660,43 @@ void TestAnimatedOutputFormatSelection()
     Pass();
 }
 
+// --deltae must reject a method name it does not know rather than silently
+// falling back to RGB, because a typo in a dithering recipe is otherwise
+// invisible: the image still renders, just with the wrong colour metric.
+// Like the other error paths in 1.6.2 it reports the problem and still exits 0.
+void TestUnknownColorCompareMethodIsRejected()
+{
+    BeginCase("colordiff/unknown-method-is-rejected");
+    BuildGradient("bogus-in.png");
+    int status = Run("--noalign --deltae=nosuchmetric -Qd,16 " + Path("bogus-in.png") +
+                     " -o " + Path("bogus-out.png"));
+    CHECK_MSG(g_lastOutput.find("Unknown identifier") != std::string::npos
+              || g_lastOutput.find("color difference formula") != std::string::npos,
+              "an unknown --deltae method produced no error text: " + g_lastOutput);
+    CHECK_MSG(status == 0, "exit status changed; animmerger 1.6.2 exits 0 after reporting this");
+    Pass();
+}
+
+// The default output name is what a user gets when they omit -o. It is
+// tile-NNNN.png, relative to the current directory, and it is the exact glob
+// the documented GIF pipeline uses:
+//   gifsicle -O2 -o out.gif -l0 -d3 tile-*.gif
+// so if the default name changes, that documented command breaks too.
+void TestDefaultOutputTemplate()
+{
+    BeginCase("output/default-name-is-tile-nnnn");
+    BuildFlat("dt", 1, 70, 80, 90);
+    CHECK(Run("--noalign --gif=never -pm " + Path("dt-000.png")) == 0,
+          "animmerger exited non-zero: " + g_lastOutput);
+    // Relative to the repo root, not to the input file's directory.
+    gdImagePtr out = LoadPngAt("tile-0000.png");
+    CHECK_MSG(out != nullptr,
+              "omitting -o did not produce tile-0000.png in the working directory");
+    Destroy(out);
+    std::remove("tile-0000.png");
+    Pass();
+}
+
 // Unusable input is reported but does NOT change the exit status: animmerger
 // 1.6.2 warns, skips the file, and still exits 0. These tests pin that
 // observed behaviour so a future change to it is a deliberate decision rather
@@ -693,6 +766,7 @@ int main()
     TestAverageYuvAgreesOnGrey();
     TestActionAvgKeepsBackgroundSolid();
     TestColorCompareMethods();
+    TestUnknownColorCompareMethodIsRejected();
     TestQuantizeRespectsColorCount();
     TestDitherMatrixPowerOfTwoWarning();
     TestDitherMatrixChangesOutput();
@@ -702,6 +776,7 @@ int main()
     TestChangeLogFrameCount();
     TestLoopingLogReusesFrames();
     TestOutputTemplate();
+    TestDefaultOutputTemplate();
     TestAnimatedOutputFormatSelection();
     TestUnreadableInputWarnsButExitsZero();
     TestMissingInputWarnsButExitsZero();
