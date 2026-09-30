@@ -43,10 +43,20 @@ fatal error: header.hh: No such file or directory
 
 **Symptoms:** Slow performance, single-threaded execution
 
+**Note:** the Makefile already passes `-fopenmp` unconditionally, and
+`alloc/FSBAllocator.hh` is compiled with
+`FSBALLOCATOR_USE_THREAD_SAFE_LOCKING_OPENMP`. OpenMP is therefore a hard
+requirement, not an optional extra — a missing OpenMP runtime is a build
+failure, not a performance setting.
+
 **Solution:**
-1. Install OpenMP library: `apt-get install libomp-dev`
-2. Add OpenMP flags to Makefile: `-fopenmp`
-3. Verify OpenMP support: `echo |cpp -fopenmp -dM |grep -i openmp`
+1. Install OpenMP: `apt-get install libomp-dev` (Debian/Ubuntu) or `pacman -S
+   gcc` (Arch, ships with the compiler)
+2. Verify OpenMP support: `echo |cpp -fopenmp -dM |grep -i openmp`
+3. On macOS with Apple clang, `-fopenmp` may be unavailable — install a real
+   LLVM via Homebrew and put it first on `PATH`, or build without it after
+   commenting out `-fopenmp` and the `FSBALLOCATOR_USE_THREAD_SAFE_LOCKING_OPENMP`
+   define in the Makefile.
 
 ---
 
@@ -62,7 +72,9 @@ fatal error: header.hh: No such file or directory
 
 **Debugging Steps:**
 1. Run with valgrind: `valgrind --leak-check=full ./animmerger`
-2. Enable debug symbols: `make CXXFLAGS="-g -O0"`
+2. Enable debug symbols: `make CXXFLAGS="-std=gnu++1z -fopenmp -g -O0"`
+   (a command-line `CXXFLAGS` replaces the Makefile's flags, so the C++17
+   standard has to be repeated or the build fails)
 3. Use gdb: `gdb ./animmerger`
 4. Check array bounds carefully
 5. Verify memory allocation succeeded
@@ -156,7 +168,7 @@ valgrind --leak-check=full --show-leak-kinds=all ./animmerger [args]
 **Profiling:**
 ```bash
 # Compile with profiling
-make CXXFLAGS="-pg -O2"
+make CXXFLAGS="-std=gnu++1z -fopenmp -pg -O2"
 
 # Run program
 ./animmerger [args]
@@ -181,12 +193,22 @@ gprof ./animmerger gmon.out > profile.txt
 
 ### Issue: Test Failures
 
+`make check` prints one `ok <name>` or `FAIL <name>: <reason>` line per test and
+a final `N passed, M failed`. The harness takes no arguments, so there is no way
+to run a single test — find the `FAIL` line and read the reason it prints.
+
 **Debugging Steps:**
-1. Run single failing test
+1. Locate the `FAIL <name>` line and read the message
 2. Check test expectations vs actual output
 3. Verify input test data is correct
-4. Compare with known good output
+4. Compare with known good output — fixtures the harness wrote are left in `tests/out/`
 5. Check for floating-point precision issues
+
+> If a test you expect to be load-bearing passes against obviously wrong code,
+> the test is the problem. That is how the equivalent-mutant case was found:
+> swapping `GetMostUsed()` for `GetLeastUsed()` still returned the background for
+> every pixel of the fixture. Strengthen the assertion rather than accepting the
+> green.
 
 ---
 
@@ -196,22 +218,29 @@ gprof ./animmerger gmon.out > profile.txt
 
 **Issue:** Missing dependencies
 ```bash
-sudo apt-get install build-essential libomp-dev
+sudo apt-get install build-essential libgd-dev
 ```
+
+libgd is the one that matters — it is the only external library the binary
+links (`-lgd`), and without it `make` fails at the link step. `libomp-dev` is
+only needed where GCC's OpenMP runtime is packaged separately.
 
 ### macOS
 
-**Issue:** Clang doesn't support OpenMP by default
+**Issue:** Apple clang has no OpenMP support
 ```bash
 brew install libomp
 export LDFLAGS="-L/usr/local/opt/libomp/lib"
 export CPPFLAGS="-I/usr/local/opt/libomp/include"
 ```
+Remember that a command-line `CXXFLAGS` wipes `-std=gnu++1z` out of the
+Makefile — see the build notes in `workflow.md`.
 
 ### Windows
 
 **Issue:** MSVC compilation differences
 - Use `/openmp` flag instead of `-fopenmp`
+- Use `/std:c++17` — the Makefile's `-std=gnu++1z` is GCC/Clang syntax
 - Handle path separators correctly
 - Use Windows-compatible headers
 

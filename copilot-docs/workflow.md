@@ -18,9 +18,12 @@ make
 
 ### Development Environment
 
-**Recommended:**
+**Required:**
 - C++ compiler with C++17 support (the Makefile passes `-std=gnu++1z`)
 - OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
+- **libgd** (`-lgd`) — all image I/O goes through libgd, not libpng.
+  Arch/CachyOS: `pacman -S gd`; Debian/Ubuntu: `apt-get install libgd-dev`.
+  The pkg-config name is `gdlib`, not `libgd`.
 - Text editor with C++ syntax support
 - Git for version control
 
@@ -57,7 +60,7 @@ make clean
 make
 
 # Run tests
-make test  # if test target exists
+make check
 
 # Manual testing
 ./animmerger input.png output.png [options]
@@ -66,9 +69,11 @@ make test  # if test target exists
 ### 4. Debug Issues
 
 ```bash
-# Build with debug symbols
+# Build with debug symbols.
+# CXXFLAGS on the command line replaces the Makefile's flags outright,
+# -std=gnu++1z included, so the standard must be repeated here.
 make clean
-make CXXFLAGS="-g -O0"
+make CXXFLAGS="-std=gnu++1z -fopenmp -g -O0"
 
 # Run with debugger
 gdb ./animmerger
@@ -206,7 +211,7 @@ git push origin feature/new-dithering-algorithm
 
 3. **Test after each change**
    ```bash
-   make && make test
+   make && make check
    ```
 
 4. **Commit frequently**
@@ -240,10 +245,21 @@ git push origin feature/new-dithering-algorithm
 
 ### Automated Testing
 
-If test framework exists:
+There is a regression suite in `tests/`, run by `make check`:
+
 ```bash
-make test
+make check          # build ./animmerger and the harness, then run it
+make clean-tests    # drop the harness but keep ./animmerger
+./tests/test_animmerger   # run an already-built suite
 ```
+
+`tests/test_animmerger.cc` links libgd and shells out to the real `./animmerger`,
+so assertions cover the command-line surface rather than internal functions.
+Scratch files land in `tests/out/`. It exits non-zero on failure.
+
+`.github/workflows/build.yml` runs `make` and `make check` against both GCC and
+Clang on every pull request, then runs `./animmerger --version` and
+`--longhelp` — a binary that links but cannot start is not a build.
 
 ### Visual Testing
 
@@ -264,9 +280,10 @@ diff result.png reference.png
 # Time execution
 time ./animmerger large.png output.png
 
-# Profile
+# Profile.
+# As in the debug recipe above, a command-line CXXFLAGS drops -std=gnu++1z.
 make clean
-make CXXFLAGS="-pg -O2"
+make CXXFLAGS="-std=gnu++1z -fopenmp -pg -O2"
 ./animmerger input.png output.png
 gprof ./animmerger > profile.txt
 ```
@@ -287,7 +304,7 @@ gprof ./animmerger > profile.txt
 
 1. **Build with debug symbols**
    ```bash
-   make CXXFLAGS="-g -O0"
+   make CXXFLAGS="-std=gnu++1z -fopenmp -g -O0"
    ```
 
 2. **Run with debugger**
