@@ -43,10 +43,31 @@ jobs:
           $CC --version | head -1
           echo "libgd headers: $(dpkg -s libgd-dev | grep ^Version)"
 
-      # No warnings-as-errors gate: on a current GCC this tree emits ~2,000
-      # warnings, 1,670 of them 'regparm attribute ignored' from the
-      # FasterPixelMethod typedefs (a 32-bit x86 attribute that x86-64 drops).
-      # 'make' already exits non-zero on a hard error, which is the signal that
+      # Validate the workflow files themselves. Without this step a bad
+      # expression fails the whole run before any job is created, and the only
+      # message is "This run likely failed because of a workflow file issue" --
+      # naming neither the line nor the cause. That is exactly how the first
+      # version of this file failed.
+      #
+      # Files are named explicitly rather than globbed: 'args' is handed to the
+      # container entrypoint, not a shell, so '.github/workflows/*.yml' would
+      # not expand. actionlint exits 1 on the object-in-template class of error.
+      - name: Lint the workflows
+        uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: >-
+            -color
+            .github/workflows/build.yml
+            .github/workflows/publish-docs.yml
+
+      # No warnings-as-errors gate: this tree emits well over a thousand
+      # warnings, most of them 'regparm attribute ignored' and 'always_inline'
+      # from the FasterPixelMethod typedefs and the vmap/vector helpers (a
+      # 32-bit x86 attribute that x86-64 drops, and an attribute applied to
+      # non-static functions). The exact counts move with the compiler --
+      # ~1,670 regparm on the ubuntu-latest GCC, ~1,320 on GCC 16.2.1 -- so
+      # pin no numbers here. 'make' already exits non-zero on a hard error,
+      # which is the signal that
       # matters -- PR #5's build break was 98 such errors.
       - name: Build
         run: make -j"$(nproc)" 2>&1 | tee build.log
