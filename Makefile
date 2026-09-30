@@ -96,6 +96,37 @@ LDLIBS += -lm
 all: $(PROGS)
 # doc/README.html
 
+# Regression tests. Deliberately depends on nothing beyond libgd, which the
+# main binary already needs: the test harness drives ./animmerger as a
+# subprocess so the assertions cover the real command-line surface.
+TESTPROG = tests/test_animmerger
+TESTOBJS = tests/test_animmerger.o
+
+$(TESTPROG): $(TESTOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lgd -lm
+
+tests/%.o: tests/%.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(CPPFLAGS)
+
+# Run the suite from the repository root: the harness shells out to ./animmerger.
+check: $(PROGS) $(TESTPROG)
+	./$(TESTPROG)
+
+# Upstream had no clean target at all, so the only way to empty a dirty
+# tree was 'git clean -xdf', which also nuked untracked source. Listing the
+# generated files explicitly is what makes a plain 'make clean' safe.
+clean:
+	rm -f $(PROGS) animmerger_cga16 animmerger_nes
+	rm -f $(OBJS) canvas_nes.o canvas_cga16.o $(FPOBJS)
+	rm -rf $(TESTPROG) $(TESTOBJS) tests/out tests/out2
+	rm -f .depend
+	rm -f tile-*.png tile-*.gif
+
+clean-tests:
+	rm -rf $(TESTPROG) $(TESTOBJS) tests/out tests/out2
+
+.PHONY: all check clean clean-tests
+
 animmerger: $(OBJS) $(FPOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
