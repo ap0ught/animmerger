@@ -685,9 +685,11 @@ void TestAnimatedOutputFormatSelection()
 
 // animmerger hands the -o value straight to snprintf as a format string.
 // Whether glibc's fortified printf rejects a template therefore depends on how
-// animmerger was compiled, not on the code: _FORTIFY_SOURCE is on by default
-// on Debian and Ubuntu and off by default on Arch. So assert the invariant
-// that holds either way, and report the fortify-dependent part without failing.
+// animmerger was compiled, not on the code. It is not simply a matter of the
+// distro's _FORTIFY_SOURCE default: on the same ubuntu-latest runner the gcc
+// job aborts and the clang job accepts the same template. So assert the
+// invariant that holds either way, and report the compiler-dependent part
+// without failing.
 void TestOutputTemplateShapes()
 {
     BeginCase("output/default-shaped-template-always-works");
