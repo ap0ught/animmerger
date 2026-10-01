@@ -1,0 +1,134 @@
+name: build
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+  # Lets a maintainer re-run a build against an old commit from the UI.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.compiler.name }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      # Report every result rather than stopping at the first failure: a
+      # GCC-only break and a Clang-only break are different bugs.
+      fail-fast: false
+      matrix:
+        compiler:
+          - { name: gcc,   cc: g++ }
+          - { name: clang, cc: clang++ }
+
+    env:
+      CC: ${{ matrix.compiler.cc }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # The compiler is selected by passing CXX on the *make command line*,
+      # not by an env var. Makefile.sets has an unconditional 'CXX=g++', and a
+      # makefile assignment beats the environment, so a CXX set here is silently
+      # discarded and every job builds with g++ regardless of the matrix.
+      # Passing it on the command line works because a command-line variable
+      # overrides a makefile assignment.
+      #
+      # This asserts that, rather than assuming it. A decorative matrix is the
+      # failure mode where every job goes green while testing one compiler
+      # twice -- and that is exactly what happened before the fix.
+      - name: Confirm the matrix compiler is the one that gets used
+        run: |
+          set -eu
+          echo "env CC=$CC  CXX=${CXX:-<unset>}"
+          dry="$(make -B -n CXX="$CC" canvas.o 2>&1 || true)"
+          echo "$dry" | grep -E "^[[:space:]]*($CC)\b" \
+            || { echo "::error::expected $CC to be used, but make resolves to:"; echo "$dry" | head -5; exit 1; }
+          echo "make will use $CC"
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends make libgd-dev libomp-dev
+          pkg-config --exists gdlib && echo "gdlib found: $(pkg-config --modversion gdlib)"
+
+      - name: Report toolchain versions
+        run: |
+          $CC --version | head -1
+          echo "libgd headers: $(dpkg -s libgd-dev | grep ^Version)"
+
+      # Validate the workflow files themselves. Without this step a bad
+      # expression fails the whole run before any job is created, and the only
+      # message is "This run likely failed because of a workflow file issue" --
+      # naming neither the line nor the cause. That is exactly how the first
+      # version of this file failed.
+      #
+      # Scoped to structural validation on purpose:
+      # -shellcheck= disables the shellcheck integration. actionlint's bundled
+      # container has shellcheck, a bare binary on a dev machine usually does
+      # not, and that difference turns this step red on pre-existing style
+      # findings in publish-docs.yml (SC2086, SC2129) while passing locally --
+      # the worst possible failure mode for a lint gate. A style finding in a
+      # run: block is real but it is not what this step is for; `run:` blocks
+      # are still executed for real by the Build and Check steps below.
+      # Files are named explicitly because 'args' goes to the container
+      # entrypoint rather than a shell, so a glob would not expand.
+      - name: Lint the workflows
+        uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: >-
+            -color
+            -shellcheck=
+            .github/workflows/build.yml
+            .github/workflows/publish-docs.yml
+
+      # No warnings-as-errors gate: this tree emits well over a thousand
+      # warnings, most of them 'regparm attribute ignored' and 'always_inline'
+      # from the FasterPixelMethod typedefs and the vmap/vector helpers (a
+      # 32-bit x86 attribute that x86-64 drops, and an attribute applied to
+      # non-static functions). The exact counts move with the compiler --
+      # ~1,670 regparm on the ubuntu-latest GCC, ~1,320 on GCC 16.2.1 -- so
+      # pin no numbers here. 'make' already exits non-zero on a hard error,
+      # which is the signal that
+      # matters -- PR #5's build break was 98 such errors.
+      - name: Build
+        # pipefail is not optional here. GitHub's default shell is `bash -e {0}`
+        # -- no pipefail -- so 'make ... | tee log' returns tee's exit status and
+        # a failed build reports success. That is not hypothetical: this step
+        # reported success on a run where make printed five 'Error 1' lines.
+        # GitHub only adds pipefail when shell: bash is stated explicitly, so
+        # say it rather than depend on the default.
+        shell: bash
+        run: make CXX=$CC -j"$(nproc)" 2>&1 | tee build.log
+
+      - name: Check
+        shell: bash
+        run: make CXX=$CC check 2>&1 | tee check.log
+
+      - name: Verify the binary actually runs
+        run: |
+          ./animmerger --version
+          ./animmerger --longhelp > /dev/null
+          ./animmerger 2>&1 | head -5
+
+      - name: Upload the binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: animmerger-${{ matrix.compiler.name }}
+          path: animmerger
+          if-no-files-found: error
+
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.compiler.name }}
+          path: |
+            build.log
+            check.log
+          if-no-files-found: ignore

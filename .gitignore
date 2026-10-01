@@ -1,0 +1,19 @@
+# Compiled objects and binaries
+*.o
+animmerger
+animmerger_cga16
+animmerger_nes
+tests/test_animmerger
+
+# Generated dependency files from depfun.mak
+.depend
+
+# Generated tile-NNNN.png / tile-NNNN.gif output from a run
+tile-*.png
+tile-*.gif
+
+# Generated documentation (make doc/README.html, needs php)
+doc/README.html
+
+# Test scratch space
+/tests/out/

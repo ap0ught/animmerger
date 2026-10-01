@@ -17,8 +17,9 @@ This document contains the complete documentation for Animmerger, an advanced to
 7. [Transformation](#transformation)
 8. [Caveats](#caveats)
 9. [Usage](#usage)
-10. [Requirements](#requirements)
-11. [License](#license)
+10. [Exit Codes](#exit-codes)
+11. [Requirements](#requirements)
+12. [License](#license)
 
 ---
 
@@ -251,9 +252,30 @@ Removes specified regions by making them black, transparent, or censored.
 animmerger -pm input/*.png -m0,8,256,16,020202,A64010,D09030,006E84,511800,FFFFFF
 ```
 
+> **The colour list is a filter, not a fill colour.** `color1,color2,...` lists
+> the colours to *remove*. Pixels inside the rectangle that do not match one of
+> them are left untouched. `mask.cc:565` gates the whole operation on
+> `a.colors.empty() || a.colors.find(...) != a.colors.end()`, so:
+>
+> | command | effect on a 16x16 rect whose left half is red and right half blue |
+> |---|---|
+> | `-m0,0,16,16` | entire rectangle blanked |
+> | `-m0,0,16,16,FF0000` | only the red half blanked; blue survives |
+> | `-m0,0,16,16,00FF00` | nothing blanked — no pixel matches |
+>
+> To blank a whole rectangle, pass no colour list at all.
+
 ### HOLE/ALPHA/TRANSPARENT
 
 Creates transparent holes in specified regions.
+
+> **`censor` and `hole` differ in alpha, not RGB.** Both write black. Read from
+> the output PNG, `censor` leaves `rgba(0,0,0,255)` and `hole` leaves
+> `rgba(0,0,0,0)`; `mask.cc:572` sets `pixels[p+x] |= 0xFF000000u`, and because
+> libgd stores alpha reversed (0 = opaque, 127 = transparent) that makes the
+> pixel fully transparent. A tool reporting libgd's scale will call that same
+> pixel "alpha 127". An RGB-only comparison cannot distinguish the two modes —
+> you must compare the alpha channel.
 
 ### DELOGO/BLUR/INTERPOLATE
 
@@ -459,11 +481,45 @@ animmerger --gif -pc frames/*.png
 gifsicle -O2 -o output.gif -l0 -d3 tile-*.gif
 ```
 
+> **An animated method writes GIF even when `-o` ends in `.png`.** `-pc`, `-po`
+> and `-pv` are animated, so the default `--gif=auto` selects GIF and `-o
+> out.png` produces `out-0000.gif`. Use the `%3$s` escape, which expands to the
+> extension actually written, or force PNG with `--gif=never`:
+>
+> ```bash
+> animmerger -pc frames/*.png -o 'out-%04d.%3$s'             # GIF
+> animmerger -pc frames/*.png -o 'out-%04d.png' --gif=never  # PNG
+> ```
+>
+> The spelling matters: `--gif=never` works, `-g=never` does not. The short form
+> hands `=never` — leading `=` included — to the parser, matches no valid value
+> and aborts with exit 1 and `Invalid parameter to --gif: =never`, naming the
+> long option you did not type.
+>
+> **Format escapes apply to output filenames only.** `%04d` and `%3$s` are
+> substituted when animmerger writes output. A `%03d` in an *input* path is a
+> literal filename and fails to open, so multi-frame input has to be spelled
+> out by the shell.
+
 #### Remove HUD and Extract Background
 
 ```bash
 animmerger -pm frames/*.png -m0,8,256,16,FFFFFF,000000,FF0000 -o clean_background.png
 ```
+
+> The colour list here is a filter — only those three colours are removed, and
+> the rest of the rectangle is left as it was. Omit the list entirely to blank
+> the whole rectangle. See [BLACK/BLANK/CENSOR](#blackblankcensor).
+
+---
+
+## Exit Codes
+
+animmerger exits **0** on several genuine error paths: a file that is not an
+image, a missing input file, and an unknown `--deltae` colour-compare method
+each print a warning to stderr and still report success. Scripts must not treat
+exit status as proof the run worked; check that the expected output file exists.
+The behaviour is pinned by tests in `tests/` so that changing it is deliberate.
 
 ---
 
@@ -471,19 +527,39 @@ animmerger -pm frames/*.png -m0,8,256,16,FFFFFF,000000,FF0000 -o clean_backgroun
 
 ### Build Requirements
 
-- C++ compiler with C++11 support (GCC 4.8+, Clang 3.4+)
+- C++ compiler with C++17 support (the Makefile passes `-std=gnu++1z`)
 - Make
-- OpenMP (optional, for parallel processing)
+- OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
+- libgd development headers and library (`-lgd`) for image I/O
 
 ### Runtime Requirements
 
-- PNG library (libpng)
+- libgd (`-lgd`) — animmerger reads and writes images through libgd, not libpng
 - For GIF output: GIF library or external tools like gifsicle
 
 ### Optional Tools
 
 - **gifsicle** - For GIF optimization
 - **imagemagick** - For format conversions
+
+### Building and Testing
+
+```bash
+make          # produces ./animmerger
+make check    # builds and runs the regression suite in tests/
+make clean    # removes build output
+```
+
+On Arch/CachyOS install libgd with `pacman -S gd`; on Debian/Ubuntu,
+`apt-get install libgd-dev`. Note the pkg-config name is `gdlib`, not `libgd`.
+
+The suite in `tests/` links libgd and shells out to the real binary, so it
+depends on nothing beyond what the main program already needs. `.github/workflows/build.yml`
+runs `make` and `make check` on both GCC and Clang for every pull request.
+
+> Overriding `CXXFLAGS` on the `make` command line replaces the Makefile's flags
+> outright, `-std=gnu++1z` included, so `make CXXFLAGS="-g -O0"` does not
+> compile. Pass the standard through: `make CXXFLAGS="-std=gnu++1z -fopenmp -g -O0"`.
 
 ---
 
@@ -498,6 +574,7 @@ See the `COPYING` file for license information.
 - **Official Website:** http://bisqwit.iki.fi/source/animmerger.html
 - **GitHub Repository:** https://github.com/bisqwit/animmerger
 - **gifsicle:** http://www.lcdf.org/gifsicle/
+- **JOURNAL.md:** fork maintenance history and open items
 
 ---
 

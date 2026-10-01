@@ -96,6 +96,38 @@ LDLIBS += -lm
 all: $(PROGS)
 # doc/README.html
 
+# Regression tests. Deliberately depends on nothing beyond libgd, which the
+# main binary already needs: the test harness drives ./animmerger as a
+# subprocess so the assertions cover the real command-line surface.
+TESTPROG = tests/test_animmerger
+TESTOBJS = tests/test_animmerger.o
+
+$(TESTPROG): $(TESTOBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) -lgd -lm
+
+tests/%.o: tests/%.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ $< $(CPPFLAGS)
+
+# Run the suite from the repository root: the harness shells out to ./animmerger.
+check: $(PROGS) $(TESTPROG)
+	rm -rf tests/out tests/out2
+	./$(TESTPROG)
+
+# Upstream had no clean target at all, so the only way to empty a dirty
+# tree was 'git clean -xdf', which also nuked untracked source. Listing the
+# generated files explicitly is what makes a plain 'make clean' safe.
+clean:
+	rm -f $(PROGS) animmerger_cga16 animmerger_nes
+	rm -f $(OBJS) canvas_nes.o canvas_cga16.o $(FPOBJS)
+	rm -rf $(TESTPROG) $(TESTOBJS) tests/out tests/out2
+	rm -f .depend
+	rm -f tile-*.png tile-*.gif
+
+clean-tests:
+	rm -rf $(TESTPROG) $(TESTOBJS) tests/out tests/out2
+
+.PHONY: all check clean clean-tests
+
 animmerger: $(OBJS) $(FPOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 
@@ -104,9 +136,13 @@ animmerger_nes: \
 		quantize.o dither.o mask.o \
 		canvas_nes.o $(FPOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+# animmerger_nes is deliberately left as-is: it omits presets.o and so fails to
+# link, which is a fair signal that it is unfulfilled -- NESmode is defined
+# nowhere in the tree, so linking it would produce a binary identical to
+# animmerger. Either merge iki/WIP_nesmode (2f512f6) or delete the target.
 animmerger_cga16: \
 		main.o pixel.o align.o palette.o \
-		quantize.o dither.o mask.o \
+		quantize.o dither.o mask.o presets.o \
 		canvas_cga16.o $(FPOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 canvas_nes.o: canvas.cc

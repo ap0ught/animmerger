@@ -88,13 +88,22 @@ This means a PixelMethod has no PixelImpl that implements it.
 ### Building the Project
 
 ```bash
-make
+make          # produces ./animmerger
+make check    # builds and runs the regression suite in tests/
+make clean    # removes build output
 ```
+
+Overriding `CXXFLAGS` on the `make` command line replaces the Makefile's flags
+outright, `-std=gnu++1z` included, so `make CXXFLAGS="-g -O0"` does not compile.
+Repeat the standard: `make CXXFLAGS="-std=gnu++1z -fopenmp -g -O0"`.
 
 ### Dependencies
 
-- C++ compiler with C++11 support
-- OpenMP for parallel processing
+- C++ compiler with C++17 support
+- OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
+- **libgd** (`-lgd`) — all image I/O goes through libgd, not libpng.
+  Arch/CachyOS: `pacman -S gd`; Debian/Ubuntu: `apt-get install libgd-dev`.
+  The pkg-config name is `gdlib`, not `libgd`.
 
 ## Common Tasks
 
@@ -121,9 +130,28 @@ make
 
 ## Testing and Validation
 
-- Test images and validation scripts in appropriate directories
+- **Regression suite:** `tests/test_animmerger.cc`, run by `make check`. It links
+  libgd and shells out to the real `./animmerger`, so assertions cover the
+  command-line surface; scratch files go to `tests/out/`. It exits non-zero on
+  failure. `make clean-tests` removes it without touching `./animmerger`.
+- **CI:** `.github/workflows/build.yml` runs `make`, `make check`, and a
+  start-up smoke test (`--version`, `--longhelp`) on GCC and Clang for every
+  pull request.
 - PHP scripts for documentation generation (`doc/docmaker.php`, `doc/document.php`)
 - Preset configurations in `presets.cc`
+
+> The suite is validated by mutation testing, not just by passing: injected
+> regressions in dither-matrix parsing, the pow2 warning, `-u censor`, the
+> unreadable-input warning, the default output template and `--gif=never` were
+> each caught by a named test. When adding a test, check it can fail.
+
+## Known Quirks
+
+Documented in full in `README.md` ("Known quirks") and `DOCUMENTATION.md`. In
+short, the `-m` colour list filters rather than fills, `censor` and `hole` differ
+in alpha rather than RGB, an animated method writes GIF even when `-o` ends in
+`.png`, `%04d`/`%3$s` expand in output names only, and animmerger exits 0 on
+several error paths.
 
 ## External Resources
 
