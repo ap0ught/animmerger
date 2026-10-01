@@ -133,6 +133,15 @@ void Destroy(gdImagePtr im)
 
 // Run animmerger. Returns the exit status, and captures merged stdout+stderr
 // into g_lastOutput so a failing test can print it.
+//
+// The argument string is handed to /bin/sh, not to execve. That matters:
+// animmerger's output-name template contains printf positional specifiers, so
+// '%3$s' reaches the shell as a parameter expansion of the non-existent
+// positional parameter 's' and collapses to '%3'. An output template must
+// therefore be single-quoted at every call site -- see
+// TestAnimatedOutputFormatSelection. Silently losing '$' is the kind of bug an
+// assertion of the form "the file is absent" cannot detect, because a missing
+// file also passes that.
 std::string g_lastOutput;
 int Run(const std::string& args)
 {
@@ -647,9 +656,11 @@ void TestAnimatedOutputFormatSelection()
     BeginCase("output/animated-defaults-to-gif");
     BuildMovingBlock("fmt", 3);
 
-    // The documented escape: %3$s expands to the real extension.
+    // The documented escape: %3$s expands to the real extension. The
+    // template has to be quoted because Run() goes through /bin/sh, where the
+    // '$s' would otherwise be eaten as a positional parameter.
     CHECK(Run("--noalign -pc " + InputList("fmt", 3) +
-              " -o " + Path("fmt-%04d.%3$s")) == 0,
+              " -o '" + Path("fmt-%04d.%3$s") + "'") == 0,
           "animmerger exited non-zero: " + g_lastOutput);
     gdImagePtr gif = LoadGif("fmt-0000.gif");
     CHECK_MSG(gif != nullptr, "%3$s did not produce a loadable GIF for an animated run");
