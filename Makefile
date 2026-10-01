@@ -110,6 +110,7 @@ tests/%.o: tests/%.cc
 
 # Run the suite from the repository root: the harness shells out to ./animmerger.
 check: $(PROGS) $(TESTPROG)
+	rm -rf tests/out tests/out2
 	./$(TESTPROG)
 
 # Upstream had no clean target at all, so the only way to empty a dirty

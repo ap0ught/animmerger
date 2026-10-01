@@ -104,6 +104,15 @@ gdImagePtr LoadPng(const std::string& name)
     return im;
 }
 
+gdImagePtr LoadGif(const std::string& name)
+{
+    FILE* fp = std::fopen(Path(name).c_str(), "rb");
+    if(!fp) return nullptr;
+    gdImagePtr im = gdImageCreateFromGif(fp);
+    std::fclose(fp);
+    return im;
+}
+
 // Loads an image from an explicit path rather than from the scratch dir, for
 // the one test that asserts where the default output name lands.
 gdImagePtr LoadPngAt(const std::string& fullpath)
@@ -642,8 +651,8 @@ void TestAnimatedOutputFormatSelection()
     CHECK(Run("--noalign -pc " + InputList("fmt", 3) +
               " -o " + Path("fmt-%04d.%3$s")) == 0,
           "animmerger exited non-zero: " + g_lastOutput);
-    gdImagePtr gif = LoadPng("fmt-0000.gif");
-    CHECK_MSG(gif == nullptr, "%3$s did not expand to .gif for an animated run");
+    gdImagePtr gif = LoadGif("fmt-0000.gif");
+    CHECK_MSG(gif != nullptr, "%3$s did not produce a loadable GIF for an animated run");
     Destroy(gif);
     std::remove(Path("fmt-0000.gif").c_str());
     std::remove(Path("fmt-0001.gif").c_str());

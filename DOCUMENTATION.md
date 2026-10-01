@@ -530,6 +530,7 @@ The behaviour is pinned by tests in `tests/` so that changing it is deliberate.
 - C++ compiler with C++17 support (the Makefile passes `-std=gnu++1z`)
 - Make
 - OpenMP (required — the Makefile passes `-fopenmp` unconditionally)
+- libgd development headers and library (`-lgd`) for image I/O
 
 ### Runtime Requirements
 

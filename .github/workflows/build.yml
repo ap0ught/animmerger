@@ -28,6 +28,7 @@ jobs:
 
     env:
       CC: ${{ matrix.compiler.cc }}
+      CXX: ${{ matrix.compiler.cc }}
 
     steps:
       - uses: actions/checkout@v4
