@@ -28,10 +28,28 @@ jobs:
 
     env:
       CC: ${{ matrix.compiler.cc }}
-      CXX: ${{ matrix.compiler.cc }}
 
     steps:
       - uses: actions/checkout@v4
+
+      # The compiler is selected by passing CXX on the *make command line*,
+      # not by an env var. Makefile.sets has an unconditional 'CXX=g++', and a
+      # makefile assignment beats the environment, so a CXX set here is silently
+      # discarded and every job builds with g++ regardless of the matrix.
+      # Passing it on the command line works because a command-line variable
+      # overrides a makefile assignment.
+      #
+      # This asserts that, rather than assuming it. A decorative matrix is the
+      # failure mode where every job goes green while testing one compiler
+      # twice -- and that is exactly what happened before the fix.
+      - name: Confirm the matrix compiler is the one that gets used
+        run: |
+          set -eu
+          echo "env CC=$CC  CXX=${CXX:-<unset>}"
+          dry="$(make -B -n CXX="$CC" canvas.o 2>&1 || true)"
+          echo "$dry" | grep -E "^[[:space:]]*($CC)\b" \
+            || { echo "::error::expected $CC to be used, but make resolves to:"; echo "$dry" | head -5; exit 1; }
+          echo "make will use $CC"
 
       - name: Install build dependencies
         run: |
@@ -79,10 +97,10 @@ jobs:
       # which is the signal that
       # matters -- PR #5's build break was 98 such errors.
       - name: Build
-        run: make -j"$(nproc)" 2>&1 | tee build.log
+        run: make CXX=$CC -j"$(nproc)" 2>&1 | tee build.log
 
       - name: Check
-        run: make check 2>&1 | tee check.log
+        run: make CXX=$CC check 2>&1 | tee check.log
 
       - name: Verify the binary actually runs
         run: |
