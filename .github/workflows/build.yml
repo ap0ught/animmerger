@@ -54,7 +54,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends make libgd-dev
+          sudo apt-get install -y --no-install-recommends make libgd-dev libomp-dev
           pkg-config --exists gdlib && echo "gdlib found: $(pkg-config --modversion gdlib)"
 
       - name: Report toolchain versions
@@ -97,9 +97,17 @@ jobs:
       # which is the signal that
       # matters -- PR #5's build break was 98 such errors.
       - name: Build
+        # pipefail is not optional here. GitHub's default shell is `bash -e {0}`
+        # -- no pipefail -- so 'make ... | tee log' returns tee's exit status and
+        # a failed build reports success. That is not hypothetical: this step
+        # reported success on a run where make printed five 'Error 1' lines.
+        # GitHub only adds pipefail when shell: bash is stated explicitly, so
+        # say it rather than depend on the default.
+        shell: bash
         run: make CXX=$CC -j"$(nproc)" 2>&1 | tee build.log
 
       - name: Check
+        shell: bash
         run: make CXX=$CC check 2>&1 | tee check.log
 
       - name: Verify the binary actually runs

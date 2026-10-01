@@ -136,9 +136,13 @@ animmerger_nes: \
 		quantize.o dither.o mask.o \
 		canvas_nes.o $(FPOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
+# animmerger_nes is deliberately left as-is: it omits presets.o and so fails to
+# link, which is a fair signal that it is unfulfilled -- NESmode is defined
+# nowhere in the tree, so linking it would produce a binary identical to
+# animmerger. Either merge iki/WIP_nesmode (2f512f6) or delete the target.
 animmerger_cga16: \
 		main.o pixel.o align.o palette.o \
-		quantize.o dither.o mask.o \
+		quantize.o dither.o mask.o presets.o \
 		canvas_cga16.o $(FPOBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS) $(LDLIBS)
 canvas_nes.o: canvas.cc

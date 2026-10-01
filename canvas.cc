@@ -1438,7 +1438,7 @@ gdImagePtr TILE_Tracker::CreateFrame_Palette_Dither_CGA16(
             unsigned i = gdImageGetPixel(im, x,y);
             if(i >= 10) gdImageSetPixel(im, x,y, i+1);
         }
-        unsigned* temp = &cga16temp[y*(wid*4+3)];
+        unsigned char* temp = &cga16temp[y*(wid*4+3)];
         for(unsigned x=0; x<wid*4; ++x)
             temp[x+2] = (( gdImageGetPixel(im,x>>2,y) >> (3-(x&3)) ) & 1) << 4;
         for(unsigned i=0, x=0; x<wid; ++x)
